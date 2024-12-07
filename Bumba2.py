@@ -45,20 +45,50 @@ class CollisionParticle():
         return self.r
     
 
-class Ball():
+class Ball:
     # pass all the 
-    def __init__(self, x : float, y : float) -> None:
-        self.x = x
-        self.y = y
-        pass
+    def __init__(self, r = [0.5,0.5]) -> None:
+        self.x = r[0]
+        self.y = r[1]
 
     @property
     def x(self):
-        return self.x
+        return self.r[0]
     @property
     def y(self):
-        return self.y
+        return self.r[1]
+    @property
+    def r(self):
+        return self.r
+    
+    @x.setter
+    def x(self, value):
+        self.r[0] = value
+    def y(self, value):
+        self.r[1] = value
 
+    def Draw(self,ax):
+        circle = plt.Circle(xy=self.r, radius=self.radius, **self.styles)
+        ax.add_patch(circle)
+        return circle
+
+
+class Constants():
+    def __init__(self, g = (0, -9.81), m : float = 1, nu : float = 0.15) -> None:
+        self.g = g
+        self.m = m
+        self.nu = nu
+
+    @property
+    def g(self):
+        return self.g
+    @property
+    def m(self):
+        return self.m
+    @property
+    def nu(self):
+        return self.nu
+        
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball):
     # pass the CLOSEST particle in here
@@ -79,6 +109,27 @@ def Project(v1 , v2 ):
     return v_projection
 
 
-plt.plot(x, y)
+## use for animation debugging
+# fig = plt.gcf()
+# fig.canvas.manager.set_window_title('Test')
+## OR
+# plt.title( 'Colored Circle' )
 
-plt.show()
+
+for i in range(0, 4):
+    ax = plt.gca()
+    Ball = Ball(mass=1, startPos=(0.5,0.5),radius=0.04)
+    Ball.draw(ax=ax)
+    Ball.advance(dt=0.01, accel=9.81)
+    
+    ax.set_aspect( 1 ) # set aspect ratio
+    # ax.add_artist( Drawing_colored_circle )
+    plt.title( 'Colored Circle' )
+
+    plt.plot(x,y)
+    plt.show()
+
+# plt.plot(x, y, label="Grafiks")
+# plt.legend()
+
+# plt.show()
