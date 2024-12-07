@@ -1,126 +1,84 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-from matplotlib import animation
-# from itertools import combinations
-
-class Particle:
-    """A class representing a two-dimensional ball"""
-
-    def __init__(self, x = 1, y = 1, vx = 0, vy = 0, radius=0.01, mass = 1 ,  styles=None):
-        """Initialize the particle's position, velocity, and radius."""
-
-        self.r = np.array((x, y))
-        self.v = np.array((vx, vy)) # velocity vector
-        self.radius = radius
-
-        self.styles = styles
-        if not self.styles:
-            # Default circle styles
-            self.styles = {'edgecolor': 'b', 'fill': False}
-
-    # For convenience, map the components of the particle's position and
-    # velocity vector onto the attributes x, y, vx and vy.
-    @property
-    def x(self):
-        return self.r[0]
-    @x.setter
-    def x(self, value):
-        self.r[0] = value
-    @property
-    def y(self):
-        return self.r[1]
-    @y.setter
-    def y(self, value):
-        self.r[1] = value
-    @property
-    def vx(self):
-        return self.v[0]
-    @vx.setter
-    def vx(self, value):
-        self.v[0] = value
-    @property
-    def vy(self):
-        return self.v[1]
-    @vy.setter
-    def vy(self, value):
-        self.v[1] = value
-
-    def overlaps(self, other):
-        """Does the circle of this ball overlap?"""
-
-        return np.hypot(*(self.r - other.r)) < self.radius + other.radius
-
-    def draw(self, ax):
-        """Add this Particle's Circle patch to the Matplotlib Axes ax."""
-
-        circle = Circle(xy=self.r, radius=self.radius, **self.styles)
-        ax.add_patch(circle)
-        return circle
-
-    def advance(self, dt):
-        """Advance the Particle's position forward in time by dt."""
-
-        self.r += self.v * dt
-
-        # Make the Particles bounce off the walls
-        # if self.x - self.radius < 0:
-        #     self.x = self.radius
-        #     self.vx = -self.vx
-        # if self.x + self.radius > 1:
-        #     self.x = 1-self.radius
-        #     self.vx = -self.vx
-        # if self.y - self.radius < 0:
-        #     self.y = self.radius
-        #     self.vy = -self.vy
-        # if self.y + self.radius > 1:
-        #     self.y = 1-self.radius
-        #     self.vy = -self.vy
-
-class  Constants:
-    g = 9.81
-    nu = 0.5
-
-    def __init__(self, nu = 0.5, g = 9.81) -> None:
-        self.nu = nu
-        self.g = g
-
-
-        pass
+from matplotlib import pyplot as plt
 
 
 def string_to_function(expression):
+    """Converts a string to a numpy function"""
     def function(x):
         return eval(expression)
     return np.frompyfunc(function, 1, 1)
 
 
-if __name__ == '__main__':
-    # x0 = 0
-    # y0 = 0
+resolution : int = 100
 
-    # vx0 = 0
-    # vy0 = 0
-
-    resolution : int = 100
-
-    # need to get a function equation
-    formula : str = "1*x**2-2*x+1"
-    # formula : str = "np.tanh(x)"
-    defined_function = string_to_function(formula)
-
-    # x = np.array((1,2),0.01)
-    x = np.linspace(0, 1, resolution)
-    y = defined_function(x)
-
-    plt.plot(x,y)
-    plt.show()
+# function equation
+# formula : str = "np.tanh(x)"
+formula : str = "1*x**2-2*x+1"
 
 
-    # print("Finished main!")
+defined_function = string_to_function(formula)
 
-#     nparticles = 50
-#     radii = np.random.random(nparticles)*0.03+0.02
-#     styles = {'edgecolor': 'C0', 'linewidth': 2, 'fill': None}
-#     sim = Simulation(nparticles, radii, styles)
-#     sim.do_animation(save=False)
+# x = np.array((1,2),0.01)
+from_x = 0
+to_x = 1.5
+
+
+x = np.linspace(from_x, to_x, resolution)
+y = defined_function(x)
+
+class CollisionParticle():
+
+    # create a lot of small circles 
+    def __init__(self, x : float, y : float, r : float) -> None:
+        self.x = x
+        self.y = y
+        self.r = r
+
+    @property
+    def x(self):
+        return self.x
+    @property
+    def y(self):
+        return self.y
+    @property
+    def r(self):
+        return self.r
+    
+
+class Ball():
+    # pass all the 
+    def __init__(self, x : float, y : float) -> None:
+        self.x = x
+        self.y = y
+        pass
+
+    @property
+    def x(self):
+        return self.x
+    @property
+    def y(self):
+        return self.y
+
+
+def TangentToParticle(p1 : CollisionParticle, ball : Ball):
+    # pass the CLOSEST particle in here
+
+    v1 = np.array(ball.x, ball.y) - np.array(p1.x, p1.y)
+    v1_x = v1[0]
+    v1_y = v1[1]
+
+    #The direction may be flipped, just * by -1 if thats the case
+    t1 = np.array([-v1_y, v1_x]) 
+     
+    return t1 
+
+def Project(v1 , v2 ):
+    scalar_projection = np.dot(v1, v2)
+    v_projection = np.linalg.norm(v2) * scalar_projection
+
+    return v_projection
+
+
+plt.plot(x, y)
+
+plt.show()
