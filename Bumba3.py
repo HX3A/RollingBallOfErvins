@@ -1,4 +1,6 @@
 # Bumba2, tikai pievienoju vēl "particles", 2 funkcijas : 1. izveido visus objektus, 2. uzzīmē garfiku no objektiem
+# Vēl pievienoju divus veidus ātruma aprēķināšanai - ar enerģijas zudumiem un bez. Pievienoju gravitācijas funkciju. Un vēl Collision detection Lite, vajag viņu uztaisīt tā, lai nepārbauda visiem punktiem, bet daļai.
+# Klassēs visur pieliku self._x (underscore), jo savādāk nestrādāja
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -50,16 +52,24 @@ class CollisionParticle():
 class Ball():
     # pass all the 
     def __init__(self, x : float, y : float) -> None:
-        self.x = x
-        self.y = y
-        pass
+        self._x = x
+        self._y = y
 
     @property
     def x(self):
-        return self.x
+        return self._x
+
+    @x.setter
+    def x(self, new_x : float):
+        self._x = new_x
+
     @property
     def y(self):
-        return self.y
+        return self._y
+
+    @y.setter
+    def y(self, new_y : float):
+        self._y = new_y
 
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball):
@@ -95,7 +105,28 @@ def plotparticles(particles_array):
         ax.add_patch(circle)
         ax.set_aspect('equal')
 
-plotparticles(makeparticles(x))
+# plotparticles(makeparticles(x))
+
+def get_velocity(g, H, h=Ball.y):                          # H ir sākuma augstums, kaut kur ir jāsaglabā tā vērtība 
+    return np.sqrt((10 * g * (H-h) ) / 7)
+
+def get_velocity_with_miu(g, F, m, H, h=Ball.y):           # Ātrums ieviešot berzes koeficientu, kurš ir zem F, t.i., F ir kaut kāda funkcija, kurā ir miu.
+    return np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
+
+def gravity(g, y_o, v_o, dt):
+    return y_o - (v_o * dt) - (0.5 * g * dt**2)
+
+def collision_detect(ball, particles_array):
+    for particle in particles_array:
+        distance = np.sqrt((ball.x - particle.x)**2 + (ball.y - particle.y)**2)
+        if distance < ball.r:
+            return True
+        else:
+            return False
+
+
+    
+
 
 
 # plt.plot(x, y)
