@@ -13,7 +13,7 @@ def string_to_function(expression):
     return np.frompyfunc(function, 1, 1)
 
 
-resolution : int = 2000
+resolution : int = 200
 
 # function equation
 # formula : str = "np.tanh(x)"
@@ -107,14 +107,14 @@ def plotparticles(particles_array):
 
 plotparticles(makeparticles(x))
 
-def get_velocity(g, H, h=Ball.y):                          # H ir sākuma augstums, kaut kur ir jāsaglabā tā vērtība 
-    return np.sqrt((10 * g * (H-h) ) / 7)
+# def get_velocity(g, H, h=Ball.y):                          # H ir sākuma augstums, kaut kur ir jāsaglabā tā vērtība 
+#     return np.sqrt((10 * g * (H-h) ) / 7)
 
-def get_velocity_with_miu(g, F, m, H, h=Ball.y):           # Ātrums ieviešot berzes koeficientu, kurš ir zem F, t.i., F ir kaut kāda funkcija, kurā ir miu.
-    return np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
+# def get_velocity_with_miu(g, F, m, H, h=Ball.y):           # Ātrums ieviešot berzes koeficientu, kurš ir zem F, t.i., F ir kaut kāda funkcija, kurā ir miu.
+#     return np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
 
-def gravity(g, y_o, v_o, dt):
-    return y_o - (v_o * dt) - (0.5 * g * dt**2)
+# def gravity(g, y_o, v_o, dt):
+#     return y_o - (v_o * dt) - (0.5 * g * dt**2)
 
 def collision_detect(ball, particles_array):
     for particle in particles_array:
@@ -129,9 +129,9 @@ def collision_detect(ball, particles_array):
 
 
 
-plt.plot(x, y)
+# plt.plot(x, y)
 
-plt.show()
+# plt.show()
 
 
 ## use for animation debugging
@@ -156,4 +156,4 @@ plt.show()
 # plt.plot(x, y, label="Grafiks")
 # plt.legend()
 
-# plt.show()
+plt.show()
