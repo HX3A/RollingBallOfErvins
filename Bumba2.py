@@ -51,9 +51,10 @@ class CollisionParticle():
 
 class Ball():
     # pass all the 
-    def __init__(self, x : float, y : float) -> None:
+    def __init__(self, x : float, y : float, r : float) -> None:
         self._x = x
         self._y = y
+        self.r = r
 
     @property
     def x(self):
@@ -70,6 +71,18 @@ class Ball():
     @y.setter
     def y(self, new_y : float):
         self._y = new_y
+
+    def draw(self, ax):
+        circle = plt.Circle((self.x, self.y), radius=self.r, color='b')
+        ax.add_patch(circle)
+        return circle
+    
+    def advance(self, dt, accel):
+        """Advance the Ball's position forward in time by dt."""
+        displacement = ((accel*(dt**2)) / 2)
+        # self.r += self.v * dt
+        # self.x += displacement[0]
+        self.y += displacement
 
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball):
@@ -105,16 +118,8 @@ def plotparticles(particles_array):
         ax.add_patch(circle)
         ax.set_aspect('equal')
 
-plotparticles(makeparticles(x))
 
-# def get_velocity(g, H, h=Ball.y):                          # H ir sākuma augstums, kaut kur ir jāsaglabā tā vērtība 
-#     return np.sqrt((10 * g * (H-h) ) / 7)
 
-# def get_velocity_with_miu(g, F, m, H, h=Ball.y):           # Ātrums ieviešot berzes koeficientu, kurš ir zem F, t.i., F ir kaut kāda funkcija, kurā ir miu.
-#     return np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
-
-# def gravity(g, y_o, v_o, dt):
-#     return y_o - (v_o * dt) - (0.5 * g * dt**2)
 
 def collision_detect(ball, particles_array):
     for particle in particles_array:
@@ -125,10 +130,6 @@ def collision_detect(ball, particles_array):
             return False
 
 
-    
-
-
-
 # plt.plot(x, y)
 
 # plt.show()
@@ -137,21 +138,26 @@ def collision_detect(ball, particles_array):
 ## use for animation debugging
 # fig = plt.gcf()
 # fig.canvas.manager.set_window_title('Test')
-## OR
-# plt.title( 'Colored Circle' )
 
-# for i in range(0, 4):
-#     ax = plt.gca()
-#     Ball = Ball(mass=1, startPos=(0.5,0.5),radius=0.04)
-#     Ball.draw(ax=ax)
-#     Ball.advance(dt=0.01, accel=9.81)
+
+max_frames = 2
+
+ball = Ball( x = 0.5, y = 0.5, r=0.04)
+
+for i in range(0, max_frames):
+    plotparticles(makeparticles(x))
+
+    ax = plt.gca()
+    ax.set_aspect( 1 ) # set aspect ratio
+
+    ball.draw(ax=ax)
+
+    ball.advance(dt=0.2, accel=-9.81)
     
-#     ax.set_aspect( 1 ) # set aspect ratio
-#     # ax.add_artist( Drawing_colored_circle )
-#     plt.title( 'Colored Circle' )
-
-#     plt.plot(x,y)
-#     plt.show()
+    # ax.add_artist( Drawing_colored_circle )
+    plt.title( f'Colored Circle Frame : {i}' )
+    plt.plot(x,y)
+    plt.show()
 
 # plt.plot(x, y, label="Grafiks")
 # plt.legend()
