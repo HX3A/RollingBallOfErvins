@@ -1,3 +1,7 @@
+# Bumba2, tikai pievienoju vēl "particles", 2 funkcijas : 1. izveido visus objektus, 2. uzzīmē garfiku no objektiem
+# Vēl pievienoju divus veidus ātruma aprēķināšanai - ar enerģijas zudumiem un bez. Pievienoju gravitācijas funkciju. Un vēl Collision detection Lite, vajag viņu uztaisīt tā, lai nepārbauda visiem punktiem, bet daļai.
+# Klassēs visur pieliku self._x (underscore), jo savādāk nestrādāja
+
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -9,7 +13,7 @@ def string_to_function(expression):
     return np.frompyfunc(function, 1, 1)
 
 
-resolution : int = 100
+resolution : int = 2000
 
 # function equation
 # formula : str = "np.tanh(x)"
@@ -30,65 +34,43 @@ class CollisionParticle():
 
     # create a lot of small circles 
     def __init__(self, x : float, y : float, r : float) -> None:
-        self.x = x
-        self.y = y
-        self.r = r
+        self._x = x
+        self._y = y
+        self._r = r
 
     @property
     def x(self):
-        return self.x
+        return self._x
     @property
     def y(self):
-        return self.y
+        return self._y
     @property
     def r(self):
-        return self.r
+        return self._r
     
 
-class Ball:
+class Ball():
     # pass all the 
-    def __init__(self, r = [0.5,0.5]) -> None:
-        self.x = r[0]
-        self.y = r[1]
+    def __init__(self, x : float, y : float) -> None:
+        self._x = x
+        self._y = y
 
     @property
     def x(self):
-        return self.r[0]
+        return self._x
+
+    @x.setter
+    def x(self, new_x : float):
+        self._x = new_x
+
     @property
     def y(self):
-        return self.r[1]
-    @property
-    def r(self):
-        return self.r
-    
-    @x.setter
-    def x(self, value):
-        self.r[0] = value
-    def y(self, value):
-        self.r[1] = value
+        return self._y
 
-    def Draw(self,ax):
-        circle = plt.Circle(xy=self.r, radius=self.radius, **self.styles)
-        ax.add_patch(circle)
-        return circle
+    @y.setter
+    def y(self, new_y : float):
+        self._y = new_y
 
-
-class Constants():
-    def __init__(self, g = (0, -9.81), m : float = 1, nu : float = 0.15) -> None:
-        self.g = g
-        self.m = m
-        self.nu = nu
-
-    @property
-    def g(self):
-        return self.g
-    @property
-    def m(self):
-        return self.m
-    @property
-    def nu(self):
-        return self.nu
-        
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball):
     # pass the CLOSEST particle in here
@@ -102,11 +84,54 @@ def TangentToParticle(p1 : CollisionParticle, ball : Ball):
      
     return t1 
 
-def Project(v1 , v2 ):
+def Project(v1 , v2):
     scalar_projection = np.dot(v1, v2)
     v_projection = np.linalg.norm(v2) * scalar_projection
 
     return v_projection
+
+
+def makeparticles(x_coord_array):
+    radius = (x[-1]-x[0])/(2*len(x))
+    particles = []
+    for n in x_coord_array:
+        particles.append(CollisionParticle(n, defined_function(n), radius))
+    return particles
+
+def plotparticles(particles_array):
+    fig, ax = plt.subplots()
+    for particle in particles_array:
+        circle = plt.Circle((particle.x, particle.y), particle.r, color='r')
+        ax.add_patch(circle)
+        ax.set_aspect('equal')
+
+plotparticles(makeparticles(x))
+
+def get_velocity(g, H, h=Ball.y):                          # H ir sākuma augstums, kaut kur ir jāsaglabā tā vērtība 
+    return np.sqrt((10 * g * (H-h) ) / 7)
+
+def get_velocity_with_miu(g, F, m, H, h=Ball.y):           # Ātrums ieviešot berzes koeficientu, kurš ir zem F, t.i., F ir kaut kāda funkcija, kurā ir miu.
+    return np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
+
+def gravity(g, y_o, v_o, dt):
+    return y_o - (v_o * dt) - (0.5 * g * dt**2)
+
+def collision_detect(ball, particles_array):
+    for particle in particles_array:
+        distance = np.sqrt((ball.x - particle.x)**2 + (ball.y - particle.y)**2)
+        if distance < ball.r:
+            return True
+        else:
+            return False
+
+
+    
+
+
+
+plt.plot(x, y)
+
+plt.show()
 
 
 ## use for animation debugging
@@ -115,19 +140,18 @@ def Project(v1 , v2 ):
 ## OR
 # plt.title( 'Colored Circle' )
 
-
-for i in range(0, 4):
-    ax = plt.gca()
-    Ball = Ball(mass=1, startPos=(0.5,0.5),radius=0.04)
-    Ball.draw(ax=ax)
-    Ball.advance(dt=0.01, accel=9.81)
+# for i in range(0, 4):
+#     ax = plt.gca()
+#     Ball = Ball(mass=1, startPos=(0.5,0.5),radius=0.04)
+#     Ball.draw(ax=ax)
+#     Ball.advance(dt=0.01, accel=9.81)
     
-    ax.set_aspect( 1 ) # set aspect ratio
-    # ax.add_artist( Drawing_colored_circle )
-    plt.title( 'Colored Circle' )
+#     ax.set_aspect( 1 ) # set aspect ratio
+#     # ax.add_artist( Drawing_colored_circle )
+#     plt.title( 'Colored Circle' )
 
-    plt.plot(x,y)
-    plt.show()
+#     plt.plot(x,y)
+#     plt.show()
 
 # plt.plot(x, y, label="Grafiks")
 # plt.legend()
