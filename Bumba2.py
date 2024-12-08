@@ -77,12 +77,21 @@ class Ball():
         ax.add_patch(circle)
         return circle
     
+    # for scalar -> Positive goues upwards
     def advance(self, dt, accel):
         """Advance the Ball's position forward in time by dt."""
         displacement = ((accel*(dt**2)) / 2)
         # self.r += self.v * dt
         # self.x += displacement[0]
         self.y += displacement
+    # for Vector -> Positive goues upwards
+    def advance(self, dt, accel : np.ndarray):
+        """Advance the Ball's position forward in time by dt."""
+        displacement = ((accel*(dt**2)) / 2)
+        # self.r += self.v * dt
+        # self.x += displacement[0]
+        self.x += displacement[0]
+        self.y += displacement[1]
 
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball):
@@ -121,38 +130,40 @@ def plotparticles(particles_array):
 
 
 
-def collision_detect(ball, particles_array):
+def collision_detect(ball : Ball, particles_array):
     for particle in particles_array:
         distance = np.sqrt((ball.x - particle.x)**2 + (ball.y - particle.y)**2)
-        if distance < ball.r:
+        if distance < 2 * ball.r:
             return True
         else:
             return False
 
+# teoretiski tas pats kaa tev, bet ar np.hypot funkciju
+# def collision_detect(ball : Ball, particles_array):
+#     for particle in particles_array:
+#         distance = np.hypot(np.array(ball.x, ball.y),np.array(particle.x,particle.y))
+#         if distance < ball.r:
+#             return True
+#         else:
+#             return False
 
-# plt.plot(x, y)
-
-# plt.show()
-
-
-## use for animation debugging
-# fig = plt.gcf()
-# fig.canvas.manager.set_window_title('Test')
-
-
-max_frames = 2
+max_frames = 4
 
 ball = Ball( x = 0.5, y = 0.5, r=0.04)
 
+particleArray = makeparticles(x)
+plotparticles(particleArray)
+
 for i in range(0, max_frames):
-    plotparticles(makeparticles(x))
 
     ax = plt.gca()
     ax.set_aspect( 1 ) # set aspect ratio
 
     ball.draw(ax=ax)
+    ball.advance(dt=0.1, accel=np.array([-10,-10]))
 
-    ball.advance(dt=0.2, accel=-9.81)
+    if collision_detect(ball,particleArray): # nestrada, nezinu kapeec
+        print("Warning! Collision Imminent!")
     
     # ax.add_artist( Drawing_colored_circle )
     plt.title( f'Colored Circle Frame : {i}' )
