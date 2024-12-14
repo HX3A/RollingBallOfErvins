@@ -17,7 +17,7 @@ resolution : int = 200
 
 # function equation
 # formula : str = "np.tanh(x)"
-formula : str = "1*x**2-2*x+1"
+formula : str = "1*x**2-2*x+1.1"
 
 
 defined_function = string_to_function(formula)
@@ -78,7 +78,7 @@ class Ball():
         return circle
     
     # for scalar -> Positive goues upwards
-    def advance(self, dt, accel):
+    def advance(self, dt, accel : float):
         """Advance the Ball's position forward in time by dt."""
         displacement = ((accel*(dt**2)) / 2)
         # self.r += self.v * dt
@@ -88,27 +88,36 @@ class Ball():
     def advance(self, dt, accel : np.ndarray):
         """Advance the Ball's position forward in time by dt."""
         displacement = ((accel*(dt**2)) / 2)
-        # self.r += self.v * dt
-        # self.x += displacement[0]
+
         self.x += displacement[0]
         self.y += displacement[1]
 
 
-def TangentToParticle(p1 : CollisionParticle, ball : Ball):
+def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
     # pass the CLOSEST particle in here
 
-    v1 = np.array(ball.x, ball.y) - np.array(p1.x, p1.y)
+    v1 : np.ndarray = np.array([ball.x, ball.y]) - np.array([p1.x, p1.y])
     v1_x = v1[0]
     v1_y = v1[1]
 
     #The direction may be flipped, just * by -1 if thats the case
-    t1 = np.array([-v1_y, v1_x]) 
+    t1 : np.ndarray = np.array([-v1_y, v1_x])
+    print(t1, " - perpendicular vector") 
      
-    return t1 
+    return np.array([-v1_y, v1_x])  
+
+def Normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
 
 def Project(v1 , v2):
-    scalar_projection = np.dot(v1, v2)
-    v_projection = np.linalg.norm(v2) * scalar_projection
+    scalar_projection = np.dot(v2, v1)
+
+    v_projection = Normalize(v2) * scalar_projection * 10
+
+    print(Normalize(v2), "Project insides", v_projection, "v projection")
 
     return v_projection
 
@@ -117,7 +126,7 @@ def makeparticles(x_coord_array):
     radius = (x[-1]-x[0])/(2*len(x))
     particles = []
     for n in x_coord_array:
-        particles.append(CollisionParticle(n, defined_function(n), radius))
+        particles.append(CollisionParticle(n, np.float64(defined_function(n)), radius))
     return particles
 
 def plotparticles(particles_array):
@@ -126,33 +135,26 @@ def plotparticles(particles_array):
         circle = plt.Circle((particle.x, particle.y), particle.r, color='r')
         ax.add_patch(circle)
         ax.set_aspect('equal')
-
-
+        # print((particle.x, particle.y))
 
 
 def collision_detect(ball : Ball, particles_array):
     for particle in particles_array:
-        distance = np.sqrt((ball.x - particle.x)**2 + (ball.y - particle.y)**2)
-        if distance < 2 * ball.r:
-            return True
-        else:
-            return False
+        distance = np.sqrt(np.square(ball.x - particle.x) + np.square(ball.y - particle.y))
+        # print(index,distance)
+        if distance < ball.r + particle.r:
+            print("True")
+            return True, particle
+        
+    return False, None
 
-# teoretiski tas pats kaa tev, bet ar np.hypot funkciju
-# def collision_detect(ball : Ball, particles_array):
-#     for particle in particles_array:
-#         distance = np.hypot(np.array(ball.x, ball.y),np.array(particle.x,particle.y))
-#         if distance < ball.r:
-#             return True
-#         else:
-#             return False
-
-max_frames = 4
+max_frames = 8
 
 ball = Ball( x = 0.5, y = 0.5, r=0.04)
 
 particleArray = makeparticles(x)
 plotparticles(particleArray)
+# print(type(particleArray))
 
 for i in range(0, max_frames):
 
@@ -160,10 +162,19 @@ for i in range(0, max_frames):
     ax.set_aspect( 1 ) # set aspect ratio
 
     ball.draw(ax=ax)
-    ball.advance(dt=0.1, accel=np.array([-10,-10]))
 
-    if collision_detect(ball,particleArray): # nestrada, nezinu kapeec
-        print("Warning! Collision Imminent!")
+    isCollifing, CollidingWithP = collision_detect(ball, np.array(particleArray))
+
+    if isCollifing: # nestrada, nezinu kapeec
+        # accelProjection = Project( TangentToParticle(CollidingWithP, ball), np.array([0, -10]))
+        accelProjection = Project( np.array([0, -10]), TangentToParticle(CollidingWithP, ball))
+        # print(accelProjection, "- Projection")
+
+        ball.advance(dt=0.1, accel=np.array(accelProjection))
+        
+    else:
+        # print("Warning! Collision Imminent!")
+        ball.advance(dt=0.1, accel=np.array([0,-10]))
     
     # ax.add_artist( Drawing_colored_circle )
     plt.title( f'Colored Circle Frame : {i}' )
