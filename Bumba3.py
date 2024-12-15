@@ -1,37 +1,24 @@
-# Bumba2, tikai pievienoju vēl "particles", 2 funkcijas : 1. izveido visus objektus, 2. uzzīmē garfiku no objektiem
-# Vēl pievienoju divus veidus ātruma aprēķināšanai - ar enerģijas zudumiem un bez. Pievienoju gravitācijas funkciju. Un vēl Collision detection Lite, vajag viņu uztaisīt tā, lai nepārbauda visiem punktiem, bet daļai.
-# Klassēs visur pieliku self._x (underscore), jo savādāk nestrādāja
-
 import numpy as np
 from matplotlib import pyplot as plt
+import imageio
+import os, shutil
+
+# Making a folder to save frames in it.
+isExist = os.path.exists('Frames')
+if not isExist:
+    os.makedirs('Frames')
+else:
+    print('Directory "Frames" already exists')
 
 
+# Converts a string to a numpy function
 def string_to_function(expression):
-    """Converts a string to a numpy function"""
     def function(x):
         return eval(expression)
     return np.frompyfunc(function, 1, 1)
 
 
-resolution : int = 2000
-
-# function equation
-# formula : str = "np.tanh(x)"
-formula : str = "1*x**2-2*x+1"
-
-
-defined_function = string_to_function(formula)
-
-# x = np.array((1,2),0.01)
-from_x = 0
-to_x = 1.5
-
-
-x = np.linspace(from_x, to_x, resolution)
-y = defined_function(x)
-
 class CollisionParticle():
-
     # create a lot of small circles 
     def __init__(self, x : float, y : float, r : float) -> None:
         self._x = x
@@ -48,12 +35,16 @@ class CollisionParticle():
     def r(self):
         return self._r
     
-
 class Ball():
     # pass all the 
-    def __init__(self, x : float, y : float) -> None:
+    def __init__(self, x : float, y : float, r : float) -> None:
         self._x = x
         self._y = y
+        self._r = r
+
+    @property
+    def r(self):
+        return self._r
 
     @property
     def x(self):
@@ -71,22 +62,67 @@ class Ball():
     def y(self, new_y : float):
         self._y = new_y
 
+    def draw(self, ax):
+        circle = plt.Circle((self._x, self._y), radius=self._r, color='b')
+        ax.add_patch(circle)
+        return circle
+    
+    # for scalar -> Positive goues upwards
+    def advance(self, dt, accel : float):
+        """Advance the Ball's position forward in time by dt."""
+        displacement = ((accel*(dt**2)) / 2)
+        # self.r += self.v * dt
+        # self.x += displacement[0]
+        self.y += displacement
+    # for Vector -> Positive goues upwards
+    def advance(self, dt, accel : np.ndarray):
+        """Advance the Ball's position forward in time by dt."""
+        displacement = ((accel*(dt**2)) / 2)
 
-def TangentToParticle(p1 : CollisionParticle, ball : Ball):
+        self.x += displacement[0]
+        self.y += displacement[1]
+
+
+def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
     # pass the CLOSEST particle in here
 
-    v1 = np.array(ball.x, ball.y) - np.array(p1.x, p1.y)
+    v1 : np.ndarray = np.array([ball._x, ball._y]) - np.array([p1._x, p1._y])
     v1_x = v1[0]
     v1_y = v1[1]
 
     #The direction may be flipped, just * by -1 if thats the case
-    t1 = np.array([-v1_y, v1_x]) 
-     
-    return t1 
+    t1 : np.ndarray = np.array([v1_x, -v1_y])
+    theta = np.arctan(v1_x/-v1_y) 
+    print(f'Angle {theta}')
+    return theta
+    
+
+def Angle(p1 : CollisionParticle, p2 : CollisionParticle, ball : Ball) -> np.ndarray:
+    # pass the CLOSEST particle in here
+
+    v1_x = p2._x - p1._x
+    v1_y = p2._y - p1._y
+    if v1_y <= 0:
+        theta = np.arctan(v1_y/v1_x)
+    elif v1_y >= 0:
+        theta = np.arctan(v1_y/v1_x) + np.pi
+    print(f'Angle {theta}')
+    print(p1._x , p1._y)
+    print(p2._x , p2._y)
+    return theta
+
+def Normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
 
 def Project(v1 , v2):
-    scalar_projection = np.dot(v1, v2)
-    v_projection = np.linalg.norm(v2) * scalar_projection
+    scalar_projection = np.dot(v2, v1)
+
+    v_projection = Normalize(v2) * scalar_projection * 10
+
+    print(Normalize(v2), "Project insides", v_projection, "v projection")
 
     return v_projection
 
@@ -95,40 +131,130 @@ def makeparticles(x_coord_array):
     radius = (x[-1]-x[0])/(2*len(x))
     particles = []
     for n in x_coord_array:
-        particles.append(CollisionParticle(n, defined_function(n), radius))
+        particles.append(CollisionParticle(n, np.float64(defined_function(n)), radius))
     return particles
 
 def plotparticles(particles_array):
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
     for particle in particles_array:
-        circle = plt.Circle((particle.x, particle.y), particle.r, color='r')
+        circle = plt.Circle((particle._x, particle._y), particle._r, color='r')
         ax.add_patch(circle)
         ax.set_aspect('equal')
+        # print((particle.x, particle.y))
 
-# plotparticles(makeparticles(x))
 
-def get_velocity(g, H, h=Ball.y):                          # H ir sākuma augstums, kaut kur ir jāsaglabā tā vērtība 
-    return np.sqrt((10 * g * (H-h) ) / 7)
-
-def get_velocity_with_miu(g, F, m, H, h=Ball.y):           # Ātrums ieviešot berzes koeficientu, kurš ir zem F, t.i., F ir kaut kāda funkcija, kurā ir miu.
-    return np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
-
-def gravity(g, y_o, v_o, dt):
-    return y_o - (v_o * dt) - (0.5 * g * dt**2)
-
-def collision_detect(ball, particles_array):
+def collision_detect(ball : Ball, particles_array):
     for particle in particles_array:
-        distance = np.sqrt((ball.x - particle.x)**2 + (ball.y - particle.y)**2)
-        if distance < ball.r:
-            return True
-        else:
-            return False
+        if particle._x <= ball._x + ball._r and particle._x >= ball._x - ball._r:
+            vx = ball._x - particle._x
+            vy = ball._y - particle._y
+            distance = np.sqrt(np.square(vx) + np.square(vy))
+            if distance < ball._r + particle._r:
+                displacement_value = ball._r + particle._r - distance
+                theta = np.arctan(vy/vx)
+                x_displacement = np.cos(theta) * displacement_value
+                y_displacement = np.sin(theta) * displacement_value
+                ball._x += x_displacement
+                ball._y += y_displacement
+                print("True")
+                print('particle nr.', particleArray.index(particle))
+                particle2 = particleArray[particleArray.index(particle) + 1]
+                return True, particle, particle2
+    return False, None, None
+
+def get_velocity(g, H, h):
+    velocity = np.sqrt((10 * g * (H-h) ) / 7)
+    print(f'velocity {velocity}')
+    return velocity
+
+def get_velocity_with_miu(g, F, m, H, h): 
+    velocity = np.sqrt(((10 * g * (H-h)) + F) / (7 * m))
+    return velocity
 
 
+resolution : int = 1000
+
+
+# function equation
+formula : str = "x**2 -2*x +1"
+defined_function = string_to_function(formula)
+
+
+ball = Ball( x = 0.5, y = 0.5, r=0.04)
+ball._x = 0.1
+ball._y = defined_function(ball._x) + ball._r
+
+
+from_x = 0
+to_x = 1.5
+
+
+x = np.linspace(from_x, to_x, resolution)
+y = defined_function(x)
+
+
+particleArray = makeparticles(x)
+
+m = 1
+F = 0.5
+g = 9.81
+H = ball._y + ball._r
+dt = 0.05
+
+x_displacement = 0
+y_displacement = 0
+
+filenames = []
+max_frames = 50
+for i in range(0, max_frames):
+
+    ax = plt.gca()
+    ax.set_aspect( 1 ) # set aspect ratio
+
+    ball.draw(ax=ax)
+
+    isCollifing, CollidingWithP1, CollidingWithP2  = collision_detect(ball, np.array(particleArray))
+
+    ball._x = ball._x + x_displacement
+    ball._y = ball._y + y_displacement
+
+    if isCollifing: # nestrada, nezinu kapeec
+        # # accelProjection = Project( TangentToParticle(CollidingWithP, ball), np.array([0, -10]))
+        # accelProjection = Project( np.array([0, -10]), TangentToParticle(CollidingWithP, ball))
+        # # print(accelProjection, "- Projection")
+
+        # ball.advance(dt=0.1, accel=np.array(accelProjection))
+
+        velocity = get_velocity(g, H, ball._y)
+        x_displacement = np.cos(Angle(CollidingWithP1, CollidingWithP2, ball))*velocity * dt *0.3
+        y_displacement = np.sin(Angle(CollidingWithP1, CollidingWithP2, ball))*velocity * dt *0.3
+    else:
+        ball.advance(dt=dt, accel=np.array([0,-10]))
+        x_displacement = 0
+        y_displacement = 0
+
+    print(f'ball._x {ball._x}')
+    print(f'ball._y {ball._y}')
+    print(f'x_displacement {x_displacement}')
+    print(f'y_displacement {y_displacement}')
     
+    plt.title( f'Colored Circle Frame : {i}' )
+    # plotparticles(particleArray)
+    plt.plot(x,y)
+    fname = f'Frames/frame{i}.png'
+    filenames.append(fname) 
+    plt.ylim(ymin=0, ymax =1.5)
+    plt.savefig(fname)
+    # plt.show()
+    plt.close()
+
+with imageio.get_writer('sim.gif', fps = 20) as writer:
+    for filename in filenames:
+        image = imageio.imread(filename)
+        writer.append_data(image)
+print('gif saved')
 
 
-
-# plt.plot(x, y)
-
-plt.show()
+# Deleting the folder with frames
+if os.path.isdir('Frames'):
+    shutil.rmtree('Frames')
