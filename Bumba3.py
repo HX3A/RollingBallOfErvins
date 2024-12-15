@@ -144,23 +144,41 @@ def plotparticles(particles_array):
 
 
 def collision_detect(ball : Ball, particles_array):
+    collision_particles = []
     for particle in particles_array:
         if particle._x <= ball._x + ball._r and particle._x >= ball._x - ball._r:
+
             vx = ball._x - particle._x
             vy = ball._y - particle._y
             distance = np.sqrt(np.square(vx) + np.square(vy))
+            
             if distance < ball._r + particle._r:
-                displacement_value = ball._r + particle._r - distance
-                theta = np.arctan(vy/vx)
-                x_displacement = np.cos(theta) * displacement_value
-                y_displacement = np.sin(theta) * displacement_value
-                ball._x += x_displacement
-                ball._y += y_displacement
-                print("True")
-                print('particle nr.', particleArray.index(particle))
-                particle2 = particleArray[particleArray.index(particle) + 1]
-                return True, particle, particle2
-    return False, None, None
+                p = [particle, distance]
+                collision_particles.append(p)
+
+    if len(collision_particles) == 0:      
+        return False, None, None
+    
+    closest = collision_particles[0]
+    for i in range(1, len(collision_particles)):
+        if closest[1] > collision_particles[i][1]:
+            closest = collision_particles[i]
+    distance = closest[1]
+    closest = closest[0]
+
+    vx = ball._x - closest._x
+    vy = ball._y - closest._y
+    displacement_value = ball._r + closest._r - distance
+    theta = np.arctan(vy/vx)
+    x_displacement = np.cos(theta) * displacement_value
+    y_displacement = np.sin(theta) * displacement_value
+    ball._x += x_displacement
+    ball._y += y_displacement
+
+    particle2 = particleArray[particleArray.index(closest) + 1]
+
+    return True, closest, particle2
+
 
 def get_velocity(g, H, h):
     velocity = np.sqrt((10 * g * (H-h) ) / 7)
@@ -172,7 +190,7 @@ def get_velocity_with_miu(g, F, m, H, h):
     return velocity
 
 
-resolution : int = 1000
+resolution : int = 2000
 
 
 # function equation
@@ -199,13 +217,13 @@ m = 1
 F = 0.5
 g = 9.81
 H = ball._y + ball._r
-dt = 0.05
+dt = 0.02
 
 x_displacement = 0
 y_displacement = 0
 
 filenames = []
-max_frames = 50
+max_frames = 200
 for i in range(0, max_frames):
 
     ax = plt.gca()
@@ -213,7 +231,7 @@ for i in range(0, max_frames):
 
     ball.draw(ax=ax)
 
-    isCollifing, CollidingWithP1, CollidingWithP2  = collision_detect(ball, np.array(particleArray))
+    isCollifing, CollidingWithP1, NextP  = collision_detect(ball, np.array(particleArray))
 
     ball._x = ball._x + x_displacement
     ball._y = ball._y + y_displacement
@@ -226,8 +244,8 @@ for i in range(0, max_frames):
         # ball.advance(dt=0.1, accel=np.array(accelProjection))
 
         velocity = get_velocity(g, H, ball._y)
-        x_displacement = np.cos(Angle(CollidingWithP1, CollidingWithP2, ball))*velocity * dt *0.3
-        y_displacement = np.sin(Angle(CollidingWithP1, CollidingWithP2, ball))*velocity * dt *0.3
+        x_displacement = np.cos(Angle(CollidingWithP1, NextP, ball))*velocity * dt *0.3
+        y_displacement = np.sin(Angle(CollidingWithP1, NextP, ball))*velocity * dt *0.3
     else:
         ball.advance(dt=dt, accel=np.array([0,-10]))
         x_displacement = 0
@@ -243,7 +261,7 @@ for i in range(0, max_frames):
     plt.plot(x,y)
     fname = f'Frames/frame{i}.png'
     filenames.append(fname) 
-    plt.ylim(ymin=0, ymax =1.5)
+    plt.ylim(ymin=-0.5, ymax =1.5)
     plt.savefig(fname)
     # plt.show()
     plt.close()
