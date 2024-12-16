@@ -1,9 +1,10 @@
 # Bumba2, tikai pievienoju vēl "particles", 2 funkcijas : 1. izveido visus objektus, 2. uzzīmē garfiku no objektiem
 # Vēl pievienoju divus veidus ātruma aprēķināšanai - ar enerģijas zudumiem un bez. Pievienoju gravitācijas funkciju. Un vēl Collision detection Lite, vajag viņu uztaisīt tā, lai nepārbauda visiem punktiem, bet daļai.
-# Klassēs visur pieliku self.x (underscore), jo savādāk nestrādāja
+# Klassēs visur pieliku self._x (underscore), jo savādāk nestrādāja
 
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.animation as animation
 
 
 def string_to_function(expression):
@@ -34,16 +35,16 @@ class CollisionParticle():
 
     # create a lot of small circles 
     def __init__(self, x : float, y : float, r : float) -> None:
-        self.x = x
-        self.y = y
+        self._x = x
+        self._y = y
         self._r = r
 
     @property
     def x(self):
-        return self.x
+        return self._x
     @property
     def y(self):
-        return self.y
+        return self._y
     @property
     def r(self):
         return self._r
@@ -51,58 +52,77 @@ class CollisionParticle():
 
 class Ball():
     # pass all the 
-    def __init__(self, x : float, y : float, r : float) -> None:
-        self.x = x
-        self.y = y
-        self.r = r
+    def __init__(self, x : float, y : float, r : float, vx: float = 0, vy:float = 0) -> None:
+        self._x = x
+        self._y = y
+        self._r = r
+        self._vx = vx
+        self._vy = vy
+        self._vel = [vx, vy] 
 
     @property
-    def x(self):
-        return self.x
+    def x(self) -> float:
+        return self._x
 
     @x.setter
     def x(self, newx : float):
-        self.x = newx
+        self._x = newx
 
     @property
-    def y(self):
-        return self.y
+    def y(self) -> float:
+        return self._y
 
     @y.setter
     def y(self, newy : float):
-        self.y = newy
+        self._y = newy
+
+    @property
+    def vel(self) -> np.ndarray:
+        return np.array(self._vel)
+    
+    @vel.setter
+    def vel(self, newVel : np.ndarray):
+        self._vel = newVel
 
     def draw(self, ax):
-        circle = plt.Circle((self.x, self.y), radius=self.r, color='b')
+        circle = plt.Circle((self._x, self._y), radius=self._r, color='b')
         ax.add_patch(circle)
+        self.patch = circle
         return circle
-    
-    # for scalar -> Positive goues upwards
-    def advance(self, dt, accel : float):
-        """Advance the Ball's position forward in time by dt."""
-        displacement = ((accel*(dt**2)) / 2)
-        # self.r += self.v * dt
-        # self.x += displacement[0]
-        self.y += displacement
-    # for Vector -> Positive goues upwards
-    def advance(self, dt, accel : np.ndarray):
-        """Advance the Ball's position forward in time by dt."""
-        displacement = ((accel*(dt**2)) / 2)
 
-        self.x += displacement[0]
-        self.y += displacement[1]
+    def Update(self):
+        self.patch.center = [self._x, self._y]
+
+    # for scalar -> Positive goues upwards
+    # def advance(self, dt, accel : float):
+    #     """Advance the Ball's position forward in time by dt."""
+    #     displacement = ((accel*(dt**2)) / 2)
+    #     # self._r += self.v * dt
+    #     # self._x += displacement[0]
+    #     self._y += displacement
+    # for Vector -> Positive goues upwards
+
+    def advance(self, dt,velocity : np.ndarray , accel : np.ndarray):
+        """Advance the Ball's position forward in time by dt."""
+        displacement = velocity * dt + ((accel*(dt**2)) / 2)
+
+        self._vx += velocity[0]
+        self._vy += velocity[1]
+
+        self._x += displacement[0]
+        self._y += displacement[1]
 
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
     # pass the CLOSEST particle in here
 
-    v1 : np.ndarray = np.array([ball.x, ball.y]) - np.array([p1.x, p1.y])
+    v1 : np.ndarray = np.array([ball._x, ball._y]) - np.array([p1._x, p1._y])
     v1x = v1[0]
     v1y = v1[1]
 
     #The direction may be flipped, just * by -1 if thats the case
     t1 : np.ndarray = np.array([-v1y, v1x])
-    print(t1, " - perpendicular vector") 
+    # print(t1, " - perpendicular vector") 
      
     return np.array([-v1y, v1x])  
 
@@ -117,7 +137,7 @@ def Project(v1 , v2):
 
     v_projection = Normalize(v2) * scalar_projection * 10
 
-    print(Normalize(v2), "Project insides", v_projection, "v projection")
+    # print(Normalize(v2), "Project insides", v_projection, "v projection")
 
     return v_projection
 
@@ -132,17 +152,17 @@ def makeparticles(x_coord_array):
 def plotparticles(particles_array):
     fig, ax = plt.subplots()
     for particle in particles_array:
-        circle = plt.Circle((particle.x, particle.y), particle.r, color='r')
+        circle = plt.Circle((particle._x, particle._y), particle._r, color='r')
         ax.add_patch(circle)
         ax.set_aspect('equal')
-        # print((particle.x, particle.y))
+        # print((particle._x, particle._y))
 
 
 # def collision_detect(ball : Ball, particles_array):
 #     for particle in particles_array:
-#         distance = np.sqrt(np.square(ball.x - particle.x) + np.square(ball.y - particle.y))
+#         distance = np.sqrt(np.square(ball._x - particle._x) + np.square(ball._y - particle._y))
 #         # print(index,distance)
-#         if distance < ball.r + particle.r:
+#         if distance < ball._r + particle._r:
 #             print("True")
 #             return True, particle
         
@@ -151,10 +171,10 @@ def plotparticles(particles_array):
 def collision_detect(ball : Ball, particles_array):
     collision_particles = []
     for particle in particles_array:
-        if particle.x <= ball.x + ball._r and particle.x >= ball.x - ball._r:
+        if particle._x <= ball._x + ball._r and particle._x >= ball._x - ball._r:
 
-            vx = ball.x - particle.x
-            vy = ball.y - particle.y
+            vx = ball._x - particle._x
+            vy = ball._y - particle._y
             distance = np.sqrt(np.square(vx) + np.square(vy))
             
             if distance < ball._r + particle._r:
@@ -172,50 +192,63 @@ def collision_detect(ball : Ball, particles_array):
     distance = closest[1]
     closest = closest[0]
 
-    vx = ball.x - closest.x
-    vy = ball.y - closest.y
+    vx = ball._x - closest._x
+    vy = ball._y - closest._y
     displacement_value = ball._r + closest._r - distance
+
     theta = np.arctan(vy/vx)
+    
     x_displacement = np.cos(theta) * displacement_value
     y_displacement = np.sin(theta) * displacement_value
-    ball.x += x_displacement
-    ball.y += y_displacement
+
+    ball._x += x_displacement
+    ball._y += y_displacement
 
     particle2 = particleArray[particleArray.index(closest) + 1]
 
     return True, closest, particle2
 
-max_frames = 8
 
 ball = Ball( x = 0.5, y = 0.5, r=0.04)
 
 particleArray = makeparticles(x)
-plotparticles(particleArray)
+# plotparticles(particleArray)
 # print(type(particleArray))
 
-for i in range(0, max_frames):
+dt = 0.05
 
-    ax = plt.gca()
+ax = plt.gca()
+fig = plt.gcf()
+max_frames = 100
+
+ball.draw(ax=ax)
+
+def Move(i):
+    
     ax.set_aspect( 1 ) # set aspect ratio
 
-    ball.draw(ax=ax)
+    ball.Update()
 
-    isCollifing, CollidingWithP = collision_detect(ball, np.array(particleArray))
+    isCollifing, CollidingWithP, NextP = collision_detect(ball, np.array(particleArray))
 
     if isCollifing: # nestrada, nezinu kapeec
-        # accelProjection = Project( TangentToParticle(CollidingWithP, ball), np.array([0, -10]))
         accelProjection = Project( np.array([0, -10]), TangentToParticle(CollidingWithP, ball))
-        # print(accelProjection, "- Projection")
 
-        ball.advance(dt=0.1, accel=np.array(accelProjection))
+        ball._vel = np.array(accelProjection) * dt
+
+        ball.advance(dt,velocity= ball.vel, accel=np.array(accelProjection))
+
+        # ax.quiver(ball.x,ball.y,  *ball.vel,scale = 1, color = "red")
+        print(ball._vel)
         
     else:
-        # print("Warning! Collision Imminent!")
-        ball.advance(dt=0.1, accel=np.array([0,-10]))
+        ball.advance(dt,velocity=np.array([0,0]), accel=np.array([0,-10]))
     
     # ax.add_artist( Drawing_colored_circle )
     plt.title( f'Colored Circle Frame : {i}' )
     plt.plot(x,y)
-    plt.show()
+
+
+anim = animation.FuncAnimation(fig,Move, frames=max_frames,interval=100 )
 
 plt.show()
