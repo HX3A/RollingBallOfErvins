@@ -102,13 +102,10 @@ def Angle(p1 : CollisionParticle, p2 : CollisionParticle, ball : Ball) -> np.nda
 
     v1_x = p2._x - p1._x
     v1_y = p2._y - p1._y
-    if v1_y <= 0:
-        theta = np.arctan(v1_y/v1_x)
-    elif v1_y >= 0:
-        theta = np.arctan(v1_y/v1_x) + np.pi
+    theta = np.arctan(v1_y/v1_x)
     print(f'Angle {theta}')
-    print(p1._x , p1._y)
-    print(p2._x , p2._y)
+    # print(p1._x , p1._y)
+    # print(p2._x , p2._y)
     return theta
 
 def Normalize(v):
@@ -169,13 +166,18 @@ def collision_detect(ball : Ball, particles_array):
     vx = ball._x - closest._x
     vy = ball._y - closest._y
     displacement_value = ball._r + closest._r - distance
-    theta = np.arctan(vy/vx)
+    theta = np.arccos(vx/distance)
+    print(f'Correction angle: {theta}')
     x_displacement = np.cos(theta) * displacement_value
     y_displacement = np.sin(theta) * displacement_value
     ball._x += x_displacement
     ball._y += y_displacement
 
-    particle2 = particleArray[particleArray.index(closest) + 1]
+    if not closest == particleArray[-1]:
+        particle2 = particleArray[particleArray.index(closest) + 1]
+    elif closest == particleArray[-1]:
+        particle2 = closest
+        closest = particleArray[particleArray.index(particle2) - 1]
 
     return True, closest, particle2
 
@@ -199,12 +201,12 @@ defined_function = string_to_function(formula)
 
 
 ball = Ball( x = 0.5, y = 0.5, r=0.04)
-ball._x = 0.1
-ball._y = defined_function(ball._x) + ball._r
+ball._x = 0.25
+ball._y = 0.65
 
 
 from_x = 0
-to_x = 1.5
+to_x = 3
 
 
 x = np.linspace(from_x, to_x, resolution)
@@ -216,7 +218,7 @@ particleArray = makeparticles(x)
 m = 1
 F = 0.5
 g = 9.81
-H = ball._y + ball._r
+H = ball._y
 dt = 0.02
 
 x_displacement = 0
@@ -244,8 +246,8 @@ for i in range(0, max_frames):
         # ball.advance(dt=0.1, accel=np.array(accelProjection))
 
         velocity = get_velocity(g, H, ball._y)
-        x_displacement = np.cos(Angle(CollidingWithP1, NextP, ball))*velocity * dt *0.3
-        y_displacement = np.sin(Angle(CollidingWithP1, NextP, ball))*velocity * dt *0.3
+        x_displacement = np.cos(Angle(CollidingWithP1, NextP, ball))*velocity * dt * 0.5
+        y_displacement = np.sin(Angle(CollidingWithP1, NextP, ball))*velocity * dt * 0.5
     else:
         ball.advance(dt=dt, accel=np.array([0,-10]))
         x_displacement = 0
@@ -271,6 +273,11 @@ with imageio.get_writer('sim.gif', fps = 20) as writer:
         image = imageio.imread(filename)
         writer.append_data(image)
 print('gif saved')
+
+
+# Deleting the folder with frames
+if os.path.isdir('Frames'):
+    shutil.rmtree('Frames')
 
 
 # Deleting the folder with frames
