@@ -236,13 +236,7 @@ for i in range(0, max_frames):
     ball._x = ball._x + x_displacement
     ball._y = ball._y + y_displacement
 
-    if isCollifing: # nestrada, nezinu kapeec
-        # # accelProjection = Project( TangentToParticle(CollidingWithP, ball), np.array([0, -10]))
-        # accelProjection = Project( np.array([0, -10]), TangentToParticle(CollidingWithP, ball))
-        # # print(accelProjection, "- Projection")
-
-        # ball.advance(dt=0.1, accel=np.array(accelProjection))
-
+    if isCollifing: 
         velocity = get_velocity(g, H, ball._y)
         x_displacement = np.cos(Angle(CollidingWithP1, NextP, ball))*velocity * dt *0.3
         y_displacement = np.sin(Angle(CollidingWithP1, NextP, ball))*velocity * dt *0.3
@@ -251,10 +245,10 @@ for i in range(0, max_frames):
         x_displacement = 0
         y_displacement = 0
 
-    print(f'ball._x {ball._x}')
-    print(f'ball._y {ball._y}')
-    print(f'x_displacement {x_displacement}')
-    print(f'y_displacement {y_displacement}')
+    # print(f'ball._x {ball._x}')
+    # print(f'ball._y {ball._y}')
+    # print(f'x_displacement {x_displacement}')
+    # print(f'y_displacement {y_displacement}')
     
     plt.title( f'Colored Circle Frame : {i}' )
     # plotparticles(particleArray)

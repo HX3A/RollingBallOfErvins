@@ -1,6 +1,6 @@
 # Bumba2, tikai pievienoju vēl "particles", 2 funkcijas : 1. izveido visus objektus, 2. uzzīmē garfiku no objektiem
 # Vēl pievienoju divus veidus ātruma aprēķināšanai - ar enerģijas zudumiem un bez. Pievienoju gravitācijas funkciju. Un vēl Collision detection Lite, vajag viņu uztaisīt tā, lai nepārbauda visiem punktiem, bet daļai.
-# Klassēs visur pieliku self._x (underscore), jo savādāk nestrādāja
+# Klassēs visur pieliku self.x (underscore), jo savādāk nestrādāja
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -23,27 +23,27 @@ formula : str = "1*x**2-2*x+1.1"
 defined_function = string_to_function(formula)
 
 # x = np.array((1,2),0.01)
-from_x = 0
-to_x = 1.5
+fromx = 0
+tox = 1.5
 
 
-x = np.linspace(from_x, to_x, resolution)
+x = np.linspace(fromx, tox, resolution)
 y = defined_function(x)
 
 class CollisionParticle():
 
     # create a lot of small circles 
     def __init__(self, x : float, y : float, r : float) -> None:
-        self._x = x
-        self._y = y
+        self.x = x
+        self.y = y
         self._r = r
 
     @property
     def x(self):
-        return self._x
+        return self.x
     @property
     def y(self):
-        return self._y
+        return self.y
     @property
     def r(self):
         return self._r
@@ -52,25 +52,25 @@ class CollisionParticle():
 class Ball():
     # pass all the 
     def __init__(self, x : float, y : float, r : float) -> None:
-        self._x = x
-        self._y = y
+        self.x = x
+        self.y = y
         self.r = r
 
     @property
     def x(self):
-        return self._x
+        return self.x
 
     @x.setter
-    def x(self, new_x : float):
-        self._x = new_x
+    def x(self, newx : float):
+        self.x = newx
 
     @property
     def y(self):
-        return self._y
+        return self.y
 
     @y.setter
-    def y(self, new_y : float):
-        self._y = new_y
+    def y(self, newy : float):
+        self.y = newy
 
     def draw(self, ax):
         circle = plt.Circle((self.x, self.y), radius=self.r, color='b')
@@ -97,14 +97,14 @@ def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
     # pass the CLOSEST particle in here
 
     v1 : np.ndarray = np.array([ball.x, ball.y]) - np.array([p1.x, p1.y])
-    v1_x = v1[0]
-    v1_y = v1[1]
+    v1x = v1[0]
+    v1y = v1[1]
 
     #The direction may be flipped, just * by -1 if thats the case
-    t1 : np.ndarray = np.array([-v1_y, v1_x])
+    t1 : np.ndarray = np.array([-v1y, v1x])
     print(t1, " - perpendicular vector") 
      
-    return np.array([-v1_y, v1_x])  
+    return np.array([-v1y, v1x])  
 
 def Normalize(v):
     norm = np.linalg.norm(v)
@@ -138,15 +138,52 @@ def plotparticles(particles_array):
         # print((particle.x, particle.y))
 
 
-def collision_detect(ball : Ball, particles_array):
-    for particle in particles_array:
-        distance = np.sqrt(np.square(ball.x - particle.x) + np.square(ball.y - particle.y))
-        # print(index,distance)
-        if distance < ball.r + particle.r:
-            print("True")
-            return True, particle
+# def collision_detect(ball : Ball, particles_array):
+#     for particle in particles_array:
+#         distance = np.sqrt(np.square(ball.x - particle.x) + np.square(ball.y - particle.y))
+#         # print(index,distance)
+#         if distance < ball.r + particle.r:
+#             print("True")
+#             return True, particle
         
-    return False, None
+#     return False, None
+
+def collision_detect(ball : Ball, particles_array):
+    collision_particles = []
+    for particle in particles_array:
+        if particle.x <= ball.x + ball._r and particle.x >= ball.x - ball._r:
+
+            vx = ball.x - particle.x
+            vy = ball.y - particle.y
+            distance = np.sqrt(np.square(vx) + np.square(vy))
+            
+            if distance < ball._r + particle._r:
+                p = [particle, distance]
+                collision_particles.append(p)
+
+    if len(collision_particles) == 0:      
+        return False, None, None
+    
+    closest = collision_particles[0]
+    
+    for i in range(1, len(collision_particles)):
+        if closest[1] > collision_particles[i][1]:
+            closest = collision_particles[i]
+    distance = closest[1]
+    closest = closest[0]
+
+    vx = ball.x - closest.x
+    vy = ball.y - closest.y
+    displacement_value = ball._r + closest._r - distance
+    theta = np.arctan(vy/vx)
+    x_displacement = np.cos(theta) * displacement_value
+    y_displacement = np.sin(theta) * displacement_value
+    ball.x += x_displacement
+    ball.y += y_displacement
+
+    particle2 = particleArray[particleArray.index(closest) + 1]
+
+    return True, closest, particle2
 
 max_frames = 8
 
@@ -180,8 +217,5 @@ for i in range(0, max_frames):
     plt.title( f'Colored Circle Frame : {i}' )
     plt.plot(x,y)
     plt.show()
-
-# plt.plot(x, y, label="Grafiks")
-# plt.legend()
 
 plt.show()
