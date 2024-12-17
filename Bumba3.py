@@ -161,7 +161,7 @@ resolution : int = 2000
 
 
 # Function equation
-formula : str = "x**2 - 2*x +1"
+formula : str = "0.1**x"
 defined_function = string_to_function(formula)
 
 # Starting values for the ball
@@ -171,15 +171,15 @@ ball._y = 0.65
 
 # Calculating graph data
 from_x = 0
-to_x = 2
+to_x = 20
 x = np.linspace(from_x, to_x, resolution)
 y = defined_function(x)
 
 # Making particles on the graph
 particleArray = makeparticles(x)
 
-# Constants
-miu = 0.7
+# Starting values / constants
+miu = 1
 g = 9.81
 H = ball._y
 dt = 0.02
@@ -187,8 +187,8 @@ t = 0
 
 x_displacement = 0
 y_displacement = 0
-travel = 0
 sign = 1
+
 # For animation, saves all the names of saved figure names, in order to retrieve them easier
 filenames = []
 max_frames = 300 #Duration of the animation
@@ -201,7 +201,7 @@ for i in range(0, max_frames):
 
     ball.draw(ax=ax)
 
-
+    # Variables from collision detect
     isColliding, CollidingWithP1, NextP = collision_detect(ball, np.array(particleArray))
 
     # For debugging
@@ -212,31 +212,27 @@ for i in range(0, max_frames):
 
     # Checks, whether there is a collision, and if there is, calculates x and y displacement
     if isColliding:
-        if velocity <= 0.001 and velocity >= -0.001:
+
+        H = H*(1-miu*dt*0.5) # Energy dissipation
+
+        if velocity <= 0.001 and velocity >= -0.001: # Changes the sign (direction) of velocity, when it is 0 on the slope
             H = ball._y + 0.01
             sign = -sign
-            # velocity = -velocity
-            
+
+        # Calculations of displacements 
         x_displacement = np.cos(Angle(CollidingWithP1, NextP, ball)) * velocity * dt * sign
         y_displacement = np.sin(Angle(CollidingWithP1, NextP, ball)) * velocity * dt * sign
-        travel = travel + np.sqrt(np.square(x_displacement)*np.square(y_displacement))
-        print(f'travel {travel}')
+
     # No collision - free fall
     else:
         ball.advance(dt=dt, accel=np.array([0,-10]))
         x_displacement = 0
         y_displacement = 0
     
-    # Displaces the ball in the beggining
+    # Displaces the ball
     ball._x = ball._x + x_displacement
     ball._y = ball._y + y_displacement
-    velocity = get_velocity(g, H, ball._y, miu, t) * (1 - miu * travel)
-    
-    
-    t = i*dt # Total time
-    print(f'Time {t}')
-
-    
+    velocity = get_velocity(g, H, ball._y, miu, t)
     
 
     # For debugging
