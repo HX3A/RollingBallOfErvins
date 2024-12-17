@@ -84,7 +84,7 @@ class Ball():
     def Update(self):
         self.patch.center = [self._x, self._y]
 
-    def advance(self, dt,velocity : np.ndarray , accel : np.ndarray):
+    def advance(self, dt, accel : np.ndarray):
         """Advance the Ball's position forward in time by dt."""
         displacement = np.array(self._vel) * dt + ((accel*(dt**2)) / 2)
 
@@ -94,18 +94,26 @@ class Ball():
         self._x += displacement[0]
         self._y += displacement[1]
 
+        self._vel += accel  * dt
+
     
     def advance2(self, dt,angle, velocity, accel : np.ndarray = (0,-10)):
         """Advance the Ball's position forward in time by dt."""
-        velocity = np.linalg.norm(velocity)
+        # velocity = np.linalg.norm(velocity)
         # accel = np.linalg.norm(accel)
 
-        cos = np.cos(angle)
-        sin = np.sin(angle)
+        # cos = np.cos(angle)
+        # sin = np.sin(angle)
 
-        self._x += cos * velocity * dt + accel[0] * (dt ** 2) / 2
-        self._y += sin * velocity * dt + accel[1] * (dt ** 2) / 2
+        # self._x += cos * velocity * dt + accel[0] * (dt ** 2) / 2
+        # self._y += sin * velocity * dt + accel[1] * (dt ** 2) / 2
+        # self._x += self._vel[0] * dt + accel[0] * (dt ** 2) / 2
+        # self._y += self._vel[1] * dt + accel[1] * (dt ** 2) / 2
 
+        self._x += self._vel[0] * dt
+        self._y += self._vel[1] * dt
+
+        self._vel = accel * dt
 
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
@@ -119,7 +127,11 @@ def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
     t1 : np.ndarray = np.array([-v1y, v1x])
     # print(t1, " - perpendicular vector") 
      
-    return np.array([-v1y, v1x])  
+    return t1
+
+def FlipVector90(v1):
+    return np.array([-v1[1],v1[0]])
+
 
 def Normalize(v):
     norm = np.linalg.norm(v)
@@ -130,7 +142,7 @@ def Normalize(v):
 def Project(v1 , v2) -> np.ndarray:
     scalar_projection = np.dot(v2, v1)
 
-    v_projection = Normalize(v2) * scalar_projection * 10
+    v_projection = Normalize(v2) * scalar_projection
 
     # print(Normalize(v2), "Project insides", v_projection, "v projection")
 
@@ -220,6 +232,7 @@ resolution : int = 200
 # function equation
 # formula : str = "np.tanh(x)"
 formula : str = "1*x**2-2*x+1.1"
+# formula : str = "-0.1*x - 0.3"
 
 
 defined_function = string_to_function(formula)
@@ -238,7 +251,7 @@ particleArray = makeparticles(x)
 # plotparticles(particleArray)
 # print(type(particleArray))
 
-dt = 0.04
+dt = 0.01
 
 ax = plt.gca()
 fig = plt.gcf()
@@ -247,7 +260,6 @@ max_frames = 100
 ball.draw(ax=ax)
 
 def Move(i):
-    
     ax.set_aspect( 1 ) # set aspect ratio
 
     ball.Update()
@@ -256,27 +268,36 @@ def Move(i):
 
     if isCollifing: # nestrada, nezinu kapeec
         accelProjection = Project( np.array([0, -10]), TangentToParticle(CollidingWithP, ball))
+        accelNormal = FlipVector90(accelProjection)
 
+        # FullAccel = accelProjection + accelNormal
+        # FullAccel = np.array([0, -10]) + accelNormal
+        FullAccel = accelProjection + accelNormal
         # ball._vel += np.array(accelProjection) * dt
-
+        if FullAccel[0] < 0:
+            FullAccel[1] *= -1
         # ball.advance(dt,velocity= ball.vel, accel=np.array(accelProjection))
         
-        
         theta = Angle(CollidingWithP, NextP, ball)
-        ball.advance2(dt, theta, ball._vel, accelProjection * 10 )
+        
+        # if
+
+        ball.advance2(dt, theta, ball._vel, accelProjection * 100)
+
+        # print(FullAccel)
+        print(ball._vel)
 
 
-        ax.quiver(ball.x,ball.y,  *accelProjection,scale = .01, color = "red")
+        ax.quiver(ball.x,ball.y,  *ball._vel ,scale = .0001, color = "red")
         # print(ball._vel)
         
     else:
-        ball.advance(dt,velocity=np.array([0,0]), accel=np.array([0,-10]))
+        ball.advance(dt, accel=np.array([0,-10]))
     
-    # ax.add_artist( Drawing_colored_circle )
     plt.title( f'Colored Circle Frame : {i}' )
     plt.plot(x,y)
 
 
-anim = animation.FuncAnimation(fig,Move, frames=max_frames,interval=50 )
+anim = animation.FuncAnimation(fig,Move, frames=max_frames,interval=100 )
 
 plt.show()
