@@ -8,7 +8,6 @@ import matplotlib.animation as animation
 
 
 def string_to_function(expression):
-    """Converts a string to a numpy function"""
     def function(x):
         return eval(expression)
     return np.frompyfunc(function, 1, 1)
@@ -84,21 +83,22 @@ class Ball():
     def Update(self):
         self.patch.center = [self._x, self._y]
 
-    def advance(self, dt, accel : np.ndarray):
+    def advance(self, dt, accel: np.ndarray):
         """Advance the Ball's position forward in time by dt."""
-        displacement = np.array(self._vel) * dt + ((accel*(dt**2)) / 2)
-
-        # self._vx += velocity[0]
-        # self._vy += velocity[1]
+        # Update velocity first
+        self._vel += accel * dt  # Update velocity based on acceleration
+        # Calculate displacement using updated velocity
+        displacement = self._vel * dt + (accel * (dt ** 2)) / 2
 
         self._x += displacement[0]
         self._y += displacement[1]
+        # self._x += self._vel[0] * dt + accel[0] * dt**2 / 2
+        # self._y += self._vel[1] * dt + accel[1] * dt**2 / 2
 
-        self._vel += accel  * dt
 
     
-    def advance2(self, dt,angle, velocity, accel : np.ndarray = (0,-10)):
-        """Advance the Ball's position forward in time by dt."""
+    def advance2(self, dt, accel : np.ndarray = (0,-10)):
+        """Advance the Ball's position forward in time by dt while colliding."""
         # velocity = np.linalg.norm(velocity)
         # accel = np.linalg.norm(accel)
 
@@ -109,11 +109,11 @@ class Ball():
         # self._y += sin * velocity * dt + accel[1] * (dt ** 2) / 2
         # self._x += self._vel[0] * dt + accel[0] * (dt ** 2) / 2
         # self._y += self._vel[1] * dt + accel[1] * (dt ** 2) / 2
+        self._vel += accel * dt
 
         self._x += self._vel[0] * dt
         self._y += self._vel[1] * dt
 
-        self._vel = accel * dt
 
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
@@ -140,7 +140,7 @@ def Normalize(v):
     return v / norm
 
 def Project(v1 , v2) -> np.ndarray:
-    scalar_projection = np.dot(v2, v1)
+    scalar_projection = - np.abs( np.dot(v2, v1))
 
     v_projection = Normalize(v2) * scalar_projection
 
@@ -172,7 +172,6 @@ def plotparticles(particles_array):
 #         if distance < ball._r + particle._r:
 #             print("True")
 #             return True, particle
-        
 #     return False, None
 
 def collision_detect(ball : Ball, particles_array):
@@ -196,34 +195,30 @@ def collision_detect(ball : Ball, particles_array):
     for i in range(1, len(collision_particles)):
         if closest[1] > collision_particles[i][1]:
             closest = collision_particles[i]
+
     distance = closest[1]
     closest = closest[0]
 
-    vx = ball._x - closest._x
-    vy = ball._y - closest._y
-    displacement_value = ball._r + closest._r - distance
+    # vx = ball._x - closest._x
+    # vy = ball._y - closest._y
+    # displacement_value = ball._r + closest._r - distance
 
-    theta = np.arctan(vy/vx)
+    # theta = np.arctan(vy/vx)
     
-    x_displacement = np.cos(theta) * displacement_value
-    y_displacement = np.sin(theta) * displacement_value
+    # x_displacement = np.cos(theta) * displacement_value
+    # y_displacement = np.sin(theta) * displacement_value
 
-    ball._x += x_displacement
-    ball._y += y_displacement
+    # ball._x += x_displacement
+    # ball._y += y_displacement
 
     particle2 = particleArray[particleArray.index(closest) + 1]
 
-    return True, closest, particle2
+    return True, closest , particle2
 
-def Angle(p1 : CollisionParticle, p2 : CollisionParticle, ball : Ball) -> np.ndarray:
-    # pass the CLOSEST particle in here
-
+def Angle(p1 : CollisionParticle, p2 : CollisionParticle ):
     v1_x = p2._x - p1._x
     v1_y = p2._y - p1._y
     theta = np.arctan(v1_y/v1_x)
-    # print(f'Angle {theta}')
-    # print(p1._x , p1._y)
-    # print(p2._x , p2._y)
     return theta
 
 
@@ -231,21 +226,18 @@ resolution : int = 200
 
 # function equation
 # formula : str = "np.tanh(x)"
-formula : str = "1*x**2-2*x+1.1"
+formula : str = "0.78*x**2-1.5*x+0.6"
 # formula : str = "-0.1*x - 0.3"
-
 
 defined_function = string_to_function(formula)
 
-# x = np.array((1,2),0.01)
 fromx = 0
 tox = 2
 
 x = np.linspace(fromx, tox, resolution)
 y = defined_function(x)
 
-
-ball = Ball( x = 0.5, y = 0.5, r=0.04)
+ball = Ball( x = 0.5, y = 0.45, r=0.04)
 
 particleArray = makeparticles(x)
 # plotparticles(particleArray)
@@ -259,42 +251,56 @@ max_frames = 100
 
 ball.draw(ax=ax)
 
+x_displacement = 0
+y_displacement = 0
+velScale = 0
+
 def Move(i):
+    global x_displacement
+    global y_displacement
+    global velScale
+
     ax.set_aspect( 1 ) # set aspect ratio
 
     ball.Update()
 
-    isCollifing, CollidingWithP, NextP = collision_detect(ball, np.array(particleArray))
+    isColliding, CollidingWithP, NextP = collision_detect(ball, np.array(particleArray))
 
-    if isCollifing: # nestrada, nezinu kapeec
-        accelProjection = Project( np.array([0, -10]), TangentToParticle(CollidingWithP, ball))
-        accelNormal = FlipVector90(accelProjection)
+    # ball._x +=  x_displacement
+    # ball._y +=  y_displacement
 
-        # FullAccel = accelProjection + accelNormal
-        # FullAccel = np.array([0, -10]) + accelNormal
-        FullAccel = accelProjection + accelNormal
-        # ball._vel += np.array(accelProjection) * dt
-        if FullAccel[0] < 0:
-            FullAccel[1] *= -1
-        # ball.advance(dt,velocity= ball.vel, accel=np.array(accelProjection))
-        
-        theta = Angle(CollidingWithP, NextP, ball)
-        
-        # if
+    if isColliding: 
+        AccelProjection =  Project( np.array([0,-10]), TangentToParticle(CollidingWithP, ball))
+        VelProjection = Normalize( Project( ball._vel, TangentToParticle(CollidingWithP, ball))) 
 
-        ball.advance2(dt, theta, ball._vel, accelProjection * 100)
+        angle = Angle(CollidingWithP, NextP)
+        # if angle > 0
+        # velScale += np.linalg.norm(AccelProjection)
+        ball._vel = VelProjection # + AccelProjection 
+        # ball.advance2(dt,0)
+        ball._x += dt * VelProjection[0]
+        ball._y += dt * VelProjection[1]
 
-        # print(FullAccel)
-        print(ball._vel)
-
-
-        ax.quiver(ball.x,ball.y,  *ball._vel ,scale = .0001, color = "red")
-        # print(ball._vel)
-        
+        # print(velScale)
+        # disp = np.array([np.cos(angle)* VelProjection * dt,np.sin(angle)* VelProjection * dt])
+        # ball._x = disp[0]
+        # ball._y = disp[1]
     else:
-        ball.advance(dt, accel=np.array([0,-10]))
+        # ball.advance(dt=dt, accel=np.array([0,-10]))
+        accel = np.array([0,-10])
+        
+        ball._vel += accel * dt  # Update velocity based on acceleration
+       
+        
+
+        displacement = ball._vel * dt 
+
+        ball._x += displacement[0]
+        ball._y += displacement[1]
+        # ax.quiver(ball.x,ball.y, ball._x +  x_displacement , ball._y +  y_displacement ,scale = .0001, color = "red")
+
     
-    plt.title( f'Colored Circle Frame : {i}' )
+    # plt.title( f'Colored Circle Frame : {i}' )
     plt.plot(x,y)
 
 
