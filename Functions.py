@@ -90,14 +90,14 @@ class Ball():
 
 def TangentToParticle(p1 : CollisionParticle, ball : Ball) -> np.ndarray:
     # pass the CLOSEST particle in here
+    # returns vector, tangent to the vector connecting p1 to ball
 
     v1 : np.ndarray = np.array([ball._x, ball._y]) - np.array([p1._x, p1._y])
     v1x = v1[0]
     v1y = v1[1]
 
-    #The direction may be flipped, just * by -1 if thats the case
+    # perpendicular vector
     t1 : np.ndarray = np.array([-v1y, v1x])
-    # print(t1, " - perpendicular vector") 
      
     return t1
 

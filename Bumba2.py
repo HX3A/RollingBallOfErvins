@@ -3,7 +3,6 @@ from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 from Functions import *
 
-
 resolution : int = 400
 
 # function equation
@@ -29,23 +28,17 @@ dt = 0.01
 
 ax = plt.gca()
 fig = plt.gcf()
+
+ax.set_aspect( 1 ) # set aspect ratio to 1
+
 max_frames = 100
 
 ball.draw(ax=ax)
 
-x_displacement = 0
-y_displacement = 0
-velScale = 0
 # define gravity
 g = np.array([0,-10])
 
 def Move(i):
-    global x_displacement
-    global y_displacement
-    global velScale
-
-    ax.set_aspect( 1 ) # set aspect ratio to 1
-
     # Draw new ball, replacing the old iteration
     ball.Update()
 
@@ -55,6 +48,7 @@ def Move(i):
         # Direction, in which the particle will move
         VelProjection =  Normalize(Project( ball._vel, TangentToParticle(CollidingWithP, ball)))
         AccelProjection =  Project( g, VelProjection) #* np.linalg.norm(g)
+        # ball._vel = VelProjection 
 
         # Corrections based on distance from the closest particle
         correction : float = CollisionCorrection(CollidingWithP, ball)
@@ -69,10 +63,14 @@ def Move(i):
     else:
         ball.advance2(dt,g )
 
-    # plt.title( f'Colored Circle Frame : {i}' )
-    plt.plot(x,y)
 
-
-anim = animation.FuncAnimation(fig,Move, frames=24,interval=1 )
-
+anim = animation.FuncAnimation(fig,Move, frames=500,interval=1 )
+plt.plot(x,y)
 plt.show()
+# anim.save("save")
+
+writer = animation.PillowWriter(fps=24,
+                                metadata=dict(artist='E.Laizans un  E.Karavackis'),
+                                bitrate=1800)
+
+anim.save('scatter.gif', writer=writer)
